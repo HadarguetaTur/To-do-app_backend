@@ -2,11 +2,14 @@ const dbService = require("../../services/db.service")
 const logger = require("../../services/logger.service")
 const ObjectId = require("mongodb").ObjectId
 
+
+
+
 async function query(filterBy = {}) {
   try {
 
     const collection = await dbService.getCollection("task")
-    var tasks = await collection.find().toArray()
+    var tasks = await collection.find().sort({"dueDate":1,"importance":1}).toArray()
     if (filterBy === {}) return tasks
     let newtasks = tasks
     if (filterBy.txt) {
@@ -15,9 +18,10 @@ async function query(filterBy = {}) {
     if (filterBy.importance) {
       newtasks = newtasks.filter((task) => task.importance === filterBy.importance)
     }
-    if (filterBy.status){
+    if (filterBy.status) {
       newtasks = newtasks.filter((task) => task.status === filterBy.status)
     }
+
     return newtasks
 
 
@@ -41,7 +45,6 @@ async function getById(taskId) {
 
 async function remove(taskId) {
   try {
-    console.log('kkkkkkkkkkkk', taskId);
     const collection = await dbService.getCollection("task")
 
 
@@ -79,12 +82,34 @@ async function update(task) {
   }
 }
 
+async function removeAll() {
+  console.log('here')
+  const collection = await dbService.getCollection("task")
+  console.log(collection)
+  const res = await collection.deleteMany({})
+  return res
+}
+
+async function getNextTask() {
+  try {
+    const collection = await dbService.getCollection("task")
+    let tasks = await collection.find().sort({"dueDate":1,"importance":-1}).toArray()
+    let newtasks = tasks
+    newtasks = newtasks.filter((task) => task.status === 'New')
+    return newtasks[0]
+  } catch (err) {
+    logger.error('Cannot get next task', err)
+    return null
+  }
+}
 module.exports = {
   remove,
   query,
   getById,
   add,
   update,
+  removeAll,
+  getNextTask,
 }
 
 

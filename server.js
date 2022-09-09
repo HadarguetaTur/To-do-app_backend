@@ -1,59 +1,38 @@
-const express = require("express")
-const cors = require("cors")
-const path = require("path")
-const expressSession = require("express-session")
+const express = require('express');
+const cors = require('cors');
 
-const app = express()
-const http = require("http").createServer(app)
-app.use(express.static("public"))
 
-const session = expressSession({
-  secret: "coding is amazing",
-  resave: false,
-  saveUninitialized: true,
-  cookie: { secure: false },
-})
-app.use(express.json())
-app.use(session)
+const logger = require('./services/logger.service');
+const socketService = require('./services/socket.service');
 
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.resolve(__dirname, "public")))
-} else {
+const taskRoutes = require('./api/task/task.routes');
 
-  const corsOptions = {
-    origin: [
-      "http://127.0.0.1:3030",
-      "http://localhost:3030",
-      "http://127.0.0.1:3000",
-      "http://localhost:3000",
-      "http://127.0.0.1:5173",
-      "http://127.0.0.1:5174",
-    ],
-    credentials: true,
-  }
-  app.use(cors(corsOptions))
+const app = express();
+const http = require('http').createServer(app);
+
+
+
+app.use(express.json()); 
+app.use(express.urlencoded({extended: false})); 
+
+const corsOptions = {
+  origin: [
+    "http://127.0.0.1:3030",
+    "http://localhost:3030",
+    "http://127.0.0.1:3000",
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
+  ],
+  credentials: true,
 }
+app.use(cors(corsOptions));
 
+socketService.init(http, corsOptions);
 
-const taskRoutes = require("./api/task/task.routes")
-const { connectSockets } = require("./services/socket.service")
+app.use('/api/task', taskRoutes);
 
-
-
-const setupAsyncLocalStorage = require("./middlewares/setupAls.middleware.js")
-app.all("*", setupAsyncLocalStorage)
-app.use("/api/task", taskRoutes)
-connectSockets(http, session)
-
-
-
-const logger = require("./services/logger.service")
-const port = process.env.PORT || 3030
-
-app.get("/**", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"))
-})
-
+const port = process.env.PORT || 3030;
 http.listen(port, () => {
-  logger.info("Server is running on port: " + port)
-})
+  logger.info('Server is running on port: ' + port);
+});

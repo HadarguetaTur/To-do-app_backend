@@ -62,10 +62,32 @@ async function removeTask(req, res) {
   }
 }
 
+async function removeAll(req,res){
+  try {
+      const removedTasks = await taskService.removeAll()
+      res.json(removedTasks)
+  } catch {
+      console.log('Couldn\'t remove tasks');
+  }
+}
+async function getNextTask(req,res){
+  try {
+    console.log('here')
+    const task = await taskService.getNextTask()
+    console.log(task)
+    res.json(task)
+} catch (err) {
+    console.log(`Failed getting next task to execute`, err)
+
+}
+}
+
 module.exports = {
   getTasks,
   getTaskById,
   addTask,
   updateTask,
   removeTask,
+  removeAll,
+  getNextTask,
 }
